@@ -1,5 +1,12 @@
 # openIMIS Backend opensearch_reports reference module
 
+## Adding Environmental Variables to Your Build
+To configure environmental variables for your build, include the following:
+* `OPENSEARCH_HOST` - For the non-dockerized instance in a local context, set it to 0.0.0.0:9200. 
+For the dockerized instance, use opensearch:9200.
+* `OPENSEARCH_ADMIN` This variable is used for the admin username. (default value: admin)
+* `OPENSEARCH_PASSWORD`  This variable is used for the admin password. (default value: admin)
+
 ## How to configure documents in openimis businesss module?
 To configure Django ORM models with OpenSearch documents using a noSQL approach, follow these steps:
  * Begin by creating a `documents.py` file within your module.
