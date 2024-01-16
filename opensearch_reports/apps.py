@@ -1,9 +1,6 @@
 from django.apps import AppConfig
 
-DEFAULT_CONFIG = {
-    "gql_opensearch_dashboard_search_perms": ["199001"],
-    "gql_opensearch_dashboard_update_perms": ["199003"],
-}
+DEFAULT_CONFIG = {}
 
 
 class OpensearchReportsConfig(AppConfig):
