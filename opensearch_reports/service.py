@@ -3,6 +3,7 @@ import logging
 from core.services import BaseService
 from core.signals import register_service_signal
 from opensearch_reports.models import OpenSearchDashboard
+from opensearch_reports.validations import OpenSearchDashboardValidation
 
 logger = logging.getLogger(__name__)
 
@@ -15,5 +16,5 @@ class OpenSearchDashboardService(BaseService):
 
     OBJECT_TYPE = OpenSearchDashboard
 
-    def __init__(self, user, validation_class=None):
+    def __init__(self, user, validation_class=OpenSearchDashboardValidation):
         super().__init__(user, validation_class)
