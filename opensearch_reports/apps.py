@@ -7,14 +7,17 @@ class OpensearchReportsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'opensearch_reports'
 
+    gql_opensearch_dashboard_search_perms = None
+    gql_opensearch_dashboard_update_perms = None
+
     def ready(self):
         from core.models import ModuleConfiguration
 
         cfg = ModuleConfiguration.get_or_default(self.name, DEFAULT_CONFIG)
-        self._load_config(cfg)
+        self.__load_config(cfg)
 
     @classmethod
-    def _load_config(cls, cfg):
+    def __load_config(cls, cfg):
         """
         Load all config fields that match current AppConfig class fields, all custom fields have to be loaded separately
         """
