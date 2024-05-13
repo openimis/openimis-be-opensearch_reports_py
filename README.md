@@ -117,3 +117,13 @@ include related objects, and then click export all.
 * Save file in the business model for initialization after deployment in 
 `openimis-be_<module-name>/import_data`.
 * Rename filename into `opensearch_<model-name>_dashboard.ndjson`
+
+## Developer tools
+
+### To upload opensearch configuration
+
+- from `/openimis-be_py/openIMIS`:
+  - run this command: `python manage.py upload_opensearch_dashboards --host-domain <host-domain> --imis-password <password>`. This command will This command will upload dashboards config 
+  including charts, visualizations, indexes if the opensearch is available in package.
+  - `<password>` - password necessary to log as admin user to obtain token to connect with API
+  - `<host-domain>` is a hostname with http or https protocol for example `https://release.openimis.org`
