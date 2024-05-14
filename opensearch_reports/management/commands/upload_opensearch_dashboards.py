@@ -14,30 +14,34 @@ class Command(BaseCommand):
            "if the opensearch is available in package."
 
     def add_arguments(self, parser):
-        parser.add_argument('--host-domain', dest='host_domain', type=str, help='Host domain for opensearch endpoint')
-        parser.add_argument('--imis-password', dest='imis_password', type=str, help='Password for IMIS')
+        parser.add_argument('--host-domain', dest='host_domain', type=str, help='Host domain for opensearch endpoint',
+                            default=f'http://{settings.SITE_URL()}')
+        parser.add_argument('--imis-password', dest='imis_password', type=str, help='Password for IMIS',
+                            default='admin123')
+        parser.add_argument('--imis-user', dest='imis_user', type=str, help='username for IMIS', default='Admin')
 
     def handle(self, *args, **options):
         host_domain = options.get('host_domain', 'http://localhost:8080')
         imis_password = options.get('imis_password')
+        imis_user = options.get('imis_user')
 
         # Check if the 'opensearch_reports' app is in INSTALLED_APPS
         if 'opensearch_reports' in apps.app_configs:
             self.__print_info(f'starting uploading opensearch configurations')
-            self.upload_opensearch_configuration(host_domain, imis_password)
+            self.upload_opensearch_configuration(host_domain, imis_user, imis_password)
             self.__print_success('finished uploading opensearch dashboard configurations')
         else:
             self.__print_info(f'opensearch module not included in package, skipped')
 
-    def upload_opensearch_configuration(self, host_domain, imis_password):
+    def upload_opensearch_configuration(self, host_domain, imis_user, imis_password):
         """
            function to upload dashboards configruration
            through API opensearch endpoint
         """
         opensearch_endpoint = f'{host_domain}/opensearch/api/saved_objects/_import?overwrite=true'
-        self.__upload_data(host_domain, opensearch_endpoint, imis_password)
+        self.__upload_data(host_domain, opensearch_endpoint, imis_user, imis_password)
 
-    def __upload_data(self, host_domain, opensearch_endpoint, imis_password):
+    def __upload_data(self, host_domain, opensearch_endpoint, imis_user, imis_password):
         base_path = Path(settings.BASE_DIR)
         modules_directory = base_path.parent.parent
         module_directory = Path(modules_directory).joinpath('openimis-be-opensearch_reports_py')
@@ -47,8 +51,7 @@ class Command(BaseCommand):
         with open(ndjson_file_path, 'r') as file:
             ndjson_data = file.read()
 
-        username = 'Admin'
-        token = self.__get_jwt_token(host_domain, username, imis_password)
+        token = self.__get_jwt_token(host_domain, imis_user, imis_password)
 
         if token:
             headers = {
