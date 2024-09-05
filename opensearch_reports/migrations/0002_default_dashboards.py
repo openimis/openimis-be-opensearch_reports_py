@@ -1,7 +1,6 @@
 from django.db import migrations
-from core.models import User
-from opensearch_reports.models import OpenSearchDashboard
-
+from datetime import datetime
+from uuid import uuid4
 
 def add_initial_data(apps, schema_editor):
     data = [
@@ -10,16 +9,24 @@ def add_initial_data(apps, schema_editor):
         {'name': 'Payment', 'url': 'goto/1e2d392d68907f9900f10e6289cb322f?security_tenant=private'},
         {'name': 'Grievance', 'url': 'goto/07f453c884ec6b24eaa5e44df8fee4e5?security_tenant=private'},
     ]
+    User = apps.get_model('core', 'User')
+    OpenSearchDashboard = apps.get_model('opensearch_reports', 'OpenSearchDashboard')
 
     user = User.objects.all().first()
-
+    now = datetime.now()
     if user:
         for item in data:
             osd = OpenSearchDashboard(
+                id=uuid4(),
                 name=item['name'],
-                url=item['url']
+                url=item['url'],
+                user_created=user,
+                user_updated=user,
+                date_created=now,
+                date_updated=now,
+                date_valid_from=now
             )
-            osd.save(username=user.username)
+            osd.save()
 
 
 class Migration(migrations.Migration):
