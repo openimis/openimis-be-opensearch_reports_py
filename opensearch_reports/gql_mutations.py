@@ -15,6 +15,7 @@ class UpdateOpenSearchDashboardInputType(OpenIMISMutation.Input):
     id = graphene.UUID(required=True)
     name = graphene.String(required=True, max_length=255)
     url = graphene.String(required=True, max_length=255)
+    synch_disabled = graphene.Boolean(required=True)
 
 
 class UpdateOpenSearchDashboardMutation(BaseHistoryModelUpdateMutationMixin, BaseMutation):

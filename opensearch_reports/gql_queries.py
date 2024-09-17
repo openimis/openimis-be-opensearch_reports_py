@@ -15,6 +15,7 @@ class OpenSearchDashboardGQLType(DjangoObjectType):
             "id": ["exact"],
             "name": ["iexact", "istartswith", "icontains"],
             "url": ["iexact", "istartswith", "icontains"],
+            "synch_disabled": ["exact"],
 
             "date_created": ["exact", "lt", "lte", "gt", "gte"],
             "date_updated": ["exact", "lt", "lte", "gt", "gte"],
