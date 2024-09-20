@@ -33,7 +33,6 @@ class BaseSyncDocument(Document):
     def is_sync_disabled(self):
         try:
             dashboard = OpenSearchDashboard.objects.get(name=self.DASHBOARD_NAME)
-            print(dashboard)
             return dashboard.synch_disabled
         except OpenSearchDashboard.DoesNotExist:
             # If no dashboard entry, assume sync is enabled
@@ -45,11 +44,10 @@ class BaseSyncDocument(Document):
         """
         if not self.is_sync_disabled():
             # Proceed with normal update if sync is not disabled
-            print(f"Syncing is enabled for {self.DASHBOARD_NAME}")
             return super().update(thing, action, *args, refresh=refresh, using=using, **kwargs)
         else:
             # Log and skip syncing if disabled
-            logger.warning(f"Sync is disabled for index '{self._index._name}'")
+            logger.info(f"Sync is disabled for index '{self._index._name}'")
             return None
 
     def bulk(self, actions, using=None, **kwargs):
@@ -57,10 +55,8 @@ class BaseSyncDocument(Document):
         Override the bulk method to control batch synchronization dynamically.
         """
         if not self.is_sync_disabled():
-            # Proceed with normal bulk operation if sync is not disabled
-            print(f"Bulk syncing is enabled for {self.DASHBOARD_NAME}")
             return super().bulk(actions, using=using, **kwargs)
         else:
             # Log and skip bulk syncing if disabled
-            logger.warning(f"Bulk sync is disabled for index '{self._index._name}'")
+            logger.info(f"Bulk sync is disabled for index '{self._index._name}'")
             return None
