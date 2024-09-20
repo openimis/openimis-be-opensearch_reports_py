@@ -26,6 +26,7 @@ class BaseSyncDocument(Document):
     """
     Base document class that controls synchronization based on the 'synch_disabled' flag.
     All OpenSearch document classes should inherit from this class.
+    DASHBOARD_NAME - connecting document with dashboard
     """
     DASHBOARD_NAME = None
 
@@ -38,16 +39,28 @@ class BaseSyncDocument(Document):
             # If no dashboard entry, assume sync is enabled
             return False
 
-    def save(self, **kwargs):
+    def update(self, thing, action, *args, refresh=None, using=None, **kwargs):
+        """
+        Override the update method to control synchronization dynamically.
+        """
         if not self.is_sync_disabled():
-            super().save(**kwargs)  # Proceed with syncing
+            # Proceed with normal update if sync is not disabled
+            print(f"Syncing is enabled for {self.DASHBOARD_NAME}")
+            return super().update(thing, action, *args, refresh=refresh, using=using, **kwargs)
         else:
-            print(f"Sync is disabled for index '{self._index._name}'")
+            # Log and skip syncing if disabled
             logger.warning(f"Sync is disabled for index '{self._index._name}'")
+            return None
 
-    def delete(self, **kwargs):
+    def bulk(self, actions, using=None, **kwargs):
+        """
+        Override the bulk method to control batch synchronization dynamically.
+        """
         if not self.is_sync_disabled():
-            super().delete(**kwargs)  # Proceed with deletion
+            # Proceed with normal bulk operation if sync is not disabled
+            print(f"Bulk syncing is enabled for {self.DASHBOARD_NAME}")
+            return super().bulk(actions, using=using, **kwargs)
         else:
-            print(f"Sync is disabled for index '{self._index._name}'")
-            logger.warning(f"Sync is disabled for index '{self._index._name}'")
+            # Log and skip bulk syncing if disabled
+            logger.warning(f"Bulk sync is disabled for index '{self._index._name}'")
+            return None
