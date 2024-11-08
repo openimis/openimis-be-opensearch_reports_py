@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.contrib.auth.models import AnonymousUser
 
 from core.schema import OrderedDjangoFilterConnectionField
+from core.services import wait_for_mutation
 from core.utils import append_validity_filter
 from opensearch_reports.apps import OpensearchReportsConfig
 from opensearch_reports.gql_mutations import UpdateOpenSearchDashboardMutation
@@ -25,6 +26,7 @@ class Query(graphene.ObjectType):
 
         client_mutation_id = kwargs.get("client_mutation_id")
         if client_mutation_id:
+            wait_for_mutation(client_mutation_id)
             filters.append(Q(mutations__mutation__client_mutation_id=client_mutation_id))
         Query._check_permissions(
             info.context.user,
