@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.contrib.auth.models import AnonymousUser
 
 from core.schema import OrderedDjangoFilterConnectionField
-from core.service import wait_for_mutation
+from core.services import wait_for_mutation
 from core.utils import append_validity_filter
 from opensearch_reports.apps import OpensearchReportsConfig
 from opensearch_reports.gql_mutations import UpdateOpenSearchDashboardMutation
