@@ -55,5 +55,5 @@ class BaseSyncDocument(Document):
                 )
         else:
             # Log and skip bulk syncing if disabled
-            logger.info(f"Bulk sync is disabled for index '{self._index._name}'")
+            logger.info(f"Skipping bulk sync because sync is disabled for dashboard '{self.DASHBOARD_NAME}'")
             return None
