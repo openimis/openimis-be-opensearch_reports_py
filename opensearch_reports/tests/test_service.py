@@ -5,8 +5,9 @@ from django_opensearch_dsl.registries import registry, DODConfig
 from django_opensearch_dsl.documents import Document
 from django_opensearch_dsl.registries import registry
 from unittest.mock import patch
+from unittest import skipIf
 from opensearchpy import OpenSearch
-
+from core import settings
 from opensearch_reports.models import OpenSearchDashboard
 from opensearch_reports.service import BaseSyncDocument
 
@@ -40,6 +41,7 @@ class BaseSyncDocumentTest(TestCase):
         cls.dashboard.save(username=cls.user.username)
 
     @patch.object(Document, "bulk")
+    @skipIf(not settings.OPENSEARCH_DSL_AUTOSYNC, "Skipping test because OPENSEARCH_DSL_AUTOSYNC is False")
     def test_auto_refresh_sync_enabled(self, mock_doc_bulk):
         log = MutationLog.objects.create(json_content='foobar')
 
