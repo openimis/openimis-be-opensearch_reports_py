@@ -31,7 +31,7 @@ class BaseSyncDocumentTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = create_test_interactive_user(username="admin")
+        cls.user = create_test_interactive_user(username='Admin')
         registry.register_document(MutationLogDocument)
         cls.dashboard = OpenSearchDashboard(
             name=MutationLogDocument.DASHBOARD_NAME,
