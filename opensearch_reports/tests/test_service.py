@@ -61,7 +61,7 @@ class BaseSyncDocumentTest(TestCase):
     def test_auto_refresh_sync_disabled(self, mock_doc_bulk):
         # Disable sync
         self.dashboard.synch_disabled = True
-        self.dashboard.save(username=self.user.username)
+        self.dashboard.save(user=self.user)
 
         log = MutationLog.objects.create(json_content='foobarbaz')
 
