@@ -2,6 +2,7 @@ from django.db import migrations
 from datetime import datetime
 from uuid import uuid4
 
+
 def add_initial_data(apps, schema_editor):
     data = [
         {'name': 'Beneficiary', 'url': 'goto/f36ce4c256637ca76cc31db315696e5a?security_tenant=private'},

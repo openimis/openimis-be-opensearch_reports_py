@@ -1,6 +1,8 @@
 from django.db import migrations
 import datetime
 from uuid import uuid4
+
+
 def add_initial_data(apps, schema_editor):
     data = [
         {'name': 'Individual', 'url': 'goto/8dbcd2fbd40419520645c41f02d8f4e9?security_tenant=global'},

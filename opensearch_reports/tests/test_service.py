@@ -1,12 +1,10 @@
 from core.models import MutationLog
 from core.test_helpers import create_test_interactive_user
 from django.test import TestCase, override_settings
-from django_opensearch_dsl.registries import registry, DODConfig
-from django_opensearch_dsl.documents import Document
 from django_opensearch_dsl.registries import registry
+from django_opensearch_dsl.documents import Document
 from unittest.mock import patch
 from unittest import skipIf
-from opensearchpy import OpenSearch
 from core import settings
 from opensearch_reports.models import OpenSearchDashboard
 from opensearch_reports.service import BaseSyncDocument
@@ -63,7 +61,7 @@ class BaseSyncDocumentTest(TestCase):
         self.dashboard.synch_disabled = True
         self.dashboard.save(user=self.user)
 
-        log = MutationLog.objects.create(json_content='foobarbaz')
+        MutationLog.objects.create(json_content='foobarbaz')
 
         # Indexing should NOT proceed because sync is disabled
         mock_doc_bulk.assert_not_called()
