@@ -6,8 +6,6 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from pathlib import Path
 
-from openIMIS.openimisapps import openimis_apps
-
 
 class Command(BaseCommand):
     help = "This command will upload dashboards config including charts, visualizations, indexes" \
@@ -27,11 +25,11 @@ class Command(BaseCommand):
 
         # Check if the 'opensearch_reports' app is in INSTALLED_APPS
         if 'opensearch_reports' in apps.app_configs:
-            self.__print_info(f'starting uploading opensearch configurations')
+            self.__print_info('starting uploading opensearch configurations')
             self.upload_opensearch_configuration(host_domain, imis_user, imis_password)
             self.__print_success('finished uploading opensearch dashboard configurations')
         else:
-            self.__print_info(f'opensearch module not included in package, skipped')
+            self.__print_info('opensearch module not included in package, skipped')
 
     def upload_opensearch_configuration(self, host_domain, imis_user, imis_password):
         """

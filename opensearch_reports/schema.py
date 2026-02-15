@@ -1,7 +1,6 @@
 import graphene
 import graphene_django_optimizer as gql_optimizer
 
-from graphene_django.filter import DjangoFilterConnectionField
 from django.db.models import Q
 from django.contrib.auth.models import AnonymousUser
 
