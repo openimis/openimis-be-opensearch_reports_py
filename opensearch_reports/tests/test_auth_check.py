@@ -1,6 +1,12 @@
 from unittest.mock import patch
 
-from core.test_helpers import create_test_interactive_user, create_test_role
+from core.services.userServices import create_or_update_user_roles
+from core.test_helpers import (
+    create_test_interactive_user,
+    create_test_role,
+    create_test_technical_user,
+)
+from django.core.cache import cache
 from django.test import TestCase
 from graphql_jwt.settings import jwt_settings
 from graphql_jwt.shortcuts import get_token
@@ -19,8 +25,13 @@ class OpenSearchAuthCheckTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # A core right alongside the module's: the header must not carry it.
         cls.role_read = create_test_role(
-            ['gql_opensearch_dashboard_search_perms'], name='OpenSearchViewer'
+            ['gql_opensearch_dashboard_search_perms', 'gql_query_users_perms'],
+            name='OpenSearchViewer',
+        )
+        cls.role_update = create_test_role(
+            ['gql_opensearch_dashboard_update_perms'], name='OpenSearchEditor'
         )
         cls.role_without_right = create_test_role([], name='NoOpenSearchAccess')
         cls.user_allowed = create_test_interactive_user(
@@ -29,6 +40,21 @@ class OpenSearchAuthCheckTest(TestCase):
         cls.user_denied = create_test_interactive_user(
             username='os_denied', roles=[cls.role_without_right.id]
         )
+        cls.user_editor = create_test_interactive_user(
+            username='os_editor', roles=[cls.role_read.id, cls.role_update.id]
+        )
+        # Passes the gate on the superuser flag while carrying no rights of
+        # its own - the one account the administrator branch changes.
+        cls.user_tech_admin = create_test_technical_user(
+            username='os_tech_admin', super_user=True
+        )
+        cls.user_tech_admin.is_superuser = True
+        cls.user_tech_admin.save()
+
+    def setUp(self):
+        # Rights are cached per user with no TTL, so a test that changes roles
+        # would leak its cache into the next one after the database rollback.
+        cache.clear()
 
     def _client_for(self, user):
         """Authenticate as the browser does: JWT cookie only, no Authorization
@@ -91,3 +117,53 @@ class OpenSearchAuthCheckTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         pool.assert_not_called()
         session.assert_not_called()
+
+    def test_authorized_response_carries_identity(self):
+        response = self._client_for(self.user_allowed).get(AUTH_CHECK_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['X-Auth-User'], 'os_allowed')
+        # 199001 only: the role's core right is not the cluster's business.
+        self.assertEqual(response['X-Auth-Rights'], '199001')
+
+    def test_rights_header_lists_every_module_right_held(self):
+        response = self._client_for(self.user_editor).get(AUTH_CHECK_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['X-Auth-Rights'], '199001,199003')
+
+    def test_technical_superuser_gets_every_module_right(self):
+        # It holds no rights at all, so intersecting would hand Dashboards an
+        # empty identity for an account the check above just let through.
+        response = self._client_for(self.user_tech_admin).get(AUTH_CHECK_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['X-Auth-Rights'], '199001,199003')
+
+    def test_removed_role_drops_its_right(self):
+        # The first request caches the rights; the administrator's path closes
+        # the user's role rows and drops that cache, so the second recomputes
+        # instead of serving what the first one cached.
+        client = self._client_for(self.user_editor)
+        self.assertEqual(
+            client.get(AUTH_CHECK_URL)['X-Auth-Rights'], '199001,199003'
+        )
+
+        create_or_update_user_roles(
+            self.user_editor.i_user, [self.role_read.id], None
+        )
+
+        response = client.get(AUTH_CHECK_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['X-Auth-Rights'], '199001')
+
+    def test_denied_responses_carry_no_identity(self):
+        anonymous = APIClient().get(AUTH_CHECK_URL)
+        forbidden = self._client_for(self.user_denied).get(AUTH_CHECK_URL)
+
+        self.assertEqual(anonymous.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(forbidden.status_code, status.HTTP_403_FORBIDDEN)
+        for response in (anonymous, forbidden):
+            self.assertNotIn('X-Auth-User', response)
+            self.assertNotIn('X-Auth-Rights', response)

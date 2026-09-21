@@ -9,7 +9,7 @@ from rest_framework.decorators import (
 )
 from rest_framework.permissions import AllowAny
 
-from opensearch_reports.apps import OpensearchReportsConfig
+from opensearch_reports.apps import DEFAULT_CONFIG, OpensearchReportsConfig
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,37 @@ def _has_rights(user, rights):
     return user.has_perms(rights)
 
 
+def _module_rights():
+    """Every right this module declares, as the cluster's mapping keys them.
+
+    Read off the loaded config rather than the defaults, so a deployment that
+    overrides a code keeps the forwarded identity and the check below in step.
+    """
+    return {
+        int(right)
+        for field in DEFAULT_CONFIG
+        if field.endswith("_perms")
+        for right in getattr(OpensearchReportsConfig, field) or []
+    }
+
+
+def _forwarded_rights(user):
+    """The caller's rights among this module's, sorted, as strings.
+
+    An administrator is given the full set rather than the intersection: the
+    check below passes them on the superuser flag alone, and a technical
+    account carries no rights of its own, so intersecting would send them on
+    to Dashboards with an empty identity and nothing granted there. A
+    technical account without that flag gets an empty header, correctly.
+    """
+    module_rights = _module_rights()
+    if user.is_imis_admin:
+        held = module_rights
+    else:
+        held = module_rights.intersection(user.rights)
+    return [str(right) for right in sorted(held)]
+
+
 @api_view(["GET", "HEAD"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([AllowAny])
@@ -30,8 +61,9 @@ def opensearch_auth_check(request):
     Runs once per Dashboards request, so it stays a database rights lookup with
     no outbound calls. Credentials arrive as the openIMIS JWT cookie.
 
-    Only the status is consumed: 200 authorized, 403 authenticated but not
-    allowed, 401 no usable credential - which nginx turns into a login redirect.
+    nginx consumes the status - 200 authorized, 403 authenticated but not
+    allowed, 401 no usable credential, which it turns into a login redirect -
+    and, on the 200 only, the identity headers it forwards to the cluster.
     Authentication is checked here rather than through IsAuthenticated so that
     every unauthenticated path answers 401, a valid cookie for a removed user
     included.
@@ -48,4 +80,7 @@ def opensearch_auth_check(request):
         )
         return HttpResponse(status=403)
 
-    return HttpResponse(status=200)
+    response = HttpResponse(status=200)
+    response["X-Auth-User"] = request.user.username
+    response["X-Auth-Rights"] = ",".join(_forwarded_rights(request.user))
+    return response
