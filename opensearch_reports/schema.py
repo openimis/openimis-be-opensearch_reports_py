@@ -21,16 +21,18 @@ class Query(graphene.ObjectType):
     )
 
     def resolve_opensearch_dashboard(self, info, **kwargs):
+        # The check comes first: refuse before `wait_for_mutation`, which makes the
+        # caller wait on a mutation they have no right to read.
+        Query._check_permissions(
+            info.context.user,
+            OpensearchReportsConfig.gql_opensearch_dashboard_search_perms
+        )
         filters = append_validity_filter(**kwargs)
 
         client_mutation_id = kwargs.get("client_mutation_id")
         if client_mutation_id:
             wait_for_mutation(client_mutation_id)
             filters.append(Q(mutations__mutation__client_mutation_id=client_mutation_id))
-        Query._check_permissions(
-            info.context.user,
-            OpensearchReportsConfig.gql_opensearch_dashboard_search_perms
-        )
         query = OpenSearchDashboard.objects.filter(*filters)
         return gql_optimizer.query(query, info)
 
