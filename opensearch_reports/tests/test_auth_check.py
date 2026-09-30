@@ -132,6 +132,15 @@ class OpenSearchAuthCheckTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response['X-Auth-Rights'], '199001,199003')
 
+    def test_rights_come_from_the_config_class_not_the_defaults(self):
+        # A module can declare its rights on the class and leave them out of
+        # DEFAULT_CONFIG; the header must still carry what the check enforces.
+        with patch.dict('opensearch_reports.apps.DEFAULT_CONFIG', clear=True):
+            response = self._client_for(self.user_editor).get(AUTH_CHECK_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['X-Auth-Rights'], '199001,199003')
+
     def test_technical_superuser_gets_every_module_right(self):
         # It holds no rights at all, so intersecting would hand Dashboards an
         # empty identity for an account the check above just let through.

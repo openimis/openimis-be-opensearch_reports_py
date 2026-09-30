@@ -9,7 +9,7 @@ from rest_framework.decorators import (
 )
 from rest_framework.permissions import AllowAny
 
-from opensearch_reports.apps import DEFAULT_CONFIG, OpensearchReportsConfig
+from opensearch_reports.apps import OpensearchReportsConfig
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +24,15 @@ def _has_rights(user, rights):
 def _module_rights():
     """Every right this module declares, as the cluster's mapping keys them.
 
-    Read off the loaded config rather than the defaults, so a deployment that
-    overrides a code keeps the forwarded identity and the check below in step.
+    Read off the config class, which holds the rights the check below
+    enforces whether they were loaded from the module configuration or
+    declared on the class; DEFAULT_CONFIG need not list them.
     """
     return {
         int(right)
-        for field in DEFAULT_CONFIG
+        for field, rights in vars(OpensearchReportsConfig).items()
         if field.endswith("_perms")
-        for right in getattr(OpensearchReportsConfig, field) or []
+        for right in rights or []
     }
 
 
