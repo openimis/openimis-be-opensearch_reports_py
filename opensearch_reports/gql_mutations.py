@@ -25,6 +25,10 @@ class UpdateOpenSearchDashboardMutation(BaseHistoryModelUpdateMutationMixin, Bas
 
     @classmethod
     def _validate_mutation(cls, user, **data):
+        # The check covers authentication *and* the right; the message only states
+        # the first. We keep the key "mutation.authentication_required", shared across
+        # all of openIMIS: changing it here would change the message shown to the
+        # client.
         if type(user) is AnonymousUser or not user.id or not user.has_perms(
                 OpensearchReportsConfig.gql_opensearch_dashboard_update_perms):
             raise ValidationError("mutation.authentication_required")
