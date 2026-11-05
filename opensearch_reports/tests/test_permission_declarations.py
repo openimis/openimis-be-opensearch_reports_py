@@ -16,10 +16,9 @@ What is locked down here:
   * `has_perms([])` returns True, so an empty list grants to everybody.
 """
 
-import json
-import os
-
 from django.test import TestCase
+
+from core.utils import build_permissions_map
 
 from opensearch_reports.apps import (
     DJANGO_PERMS,
@@ -42,21 +41,6 @@ EXPECTED_MAP_ENTRIES = {
     "opensearch_reports.opensearch_dashboard_search": ("openSearchDashboard", "query"),
     "opensearch_reports.opensearch_dashboard_update": ("openSearchDashboard", "update"),
 }
-
-
-def _load_permissions_map():
-    """`permissions_map.json` lives in the assembly, not in the package."""
-    from django.conf import settings
-
-    candidates = [
-        os.path.join(str(settings.BASE_DIR), "permissions_map.json"),
-        os.path.join(os.path.dirname(str(settings.BASE_DIR)), "permissions_map.json"),
-    ]
-    for path in candidates:
-        if os.path.exists(path):
-            with open(path) as handle:
-                return json.load(handle)
-    return None
 
 
 class OpenSearchReportsPermissionDeclarationTestCase(TestCase):
@@ -125,9 +109,7 @@ class OpenSearchReportsPermissionDeclarationTestCase(TestCase):
 
     def test_permissions_map_matches_the_declaration(self):
         """The deployed map and the declaration must carry the same integers."""
-        mapping = _load_permissions_map()
-        if mapping is None:
-            self.skipTest("permissions_map.json not found in this assembly")
+        mapping = build_permissions_map()
         for map_key, (entity, action) in EXPECTED_MAP_ENTRIES.items():
             with self.subTest(map_key=map_key):
                 self.assertIn(map_key, mapping)
